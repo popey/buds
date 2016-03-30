@@ -55,19 +55,19 @@ log "Got device serial number: $DEVICESERIAL"
 COMPRESSEDBACKUP=$BACKUPDIR/$DEVICENAME-$DEVICESERIAL.tgz
 
 log "Determine disk space used on device"
-DEVICESPACE=$(ssh $DEVICEUSER@$HOST "du -bs /home/phablet/" | awk '{ print $1}')
+DEVICESPACE=$(ssh $DEVICEUSER@$HOST "du -bks /home/phablet/" | awk '{ print $1}')
 log "Finished determining disk space used on device"
 
 log "Determine free space on current machine"
-DESKTOPSPACE=$(df -B1 --output=avail  $BACKUPDIR | tail -n 1)
+DESKTOPSPACE=$(df -k $BACKUPDIR | tail -n 1 | awk '{ print $4 }' )
 log "Finished determining free space on current machine"
 
 # Check if we have enough disk space in $BACKUPDIR for the backup (roughly 2x size)
 # if DESKTOPSPACE > DEVICESPACE*2 then okay!
 DOUBLEDEVICESPACE=$(expr $DEVICESPACE \* 2)
-log "Approximate disk space used on device: $DEVICESPACE"
-log "Approximate free space on backup disk: $DESKTOPSPACE"
-log "Approximate freespace need for backup: $DOUBLEDEVICESPACE"
+log "Approximate disk space used on device (K): $DEVICESPACE"
+log "Approximate free space on backup disk (K): $DESKTOPSPACE"
+log "Approximate freespace need for backup (K): $DOUBLEDEVICESPACE"
 
 # Rudimentary check for 2x space used on device on desktop
 if [ "$DOUBLEDEVICESPACE" -gt "$DESKTOPSPACE" ]; then
