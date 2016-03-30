@@ -77,7 +77,7 @@ fi
 
 # Get list of applications installed on device
 log "Get list of installed apps from device"
-ssh $DEVICEUSER@$HOST 'click list' | tee -a $CLICKFILE
+ssh $DEVICEUSER@$HOST 'click list' > $CLICKFILE
 log "Finished getting list of installed apps from device"
 
 # Start backup
