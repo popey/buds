@@ -40,8 +40,7 @@ if [ "$DEVICENAME" == "" ]; then
   log "Failed to get device code name"
   exit 1
 fi
-echo $DEVICENAME | tee -a $LOGFILE
-log "Got device code name"
+log "Got device code name: $DEVICENAME"
 
 # Get device serial number
 log "Get device serial number"
@@ -50,8 +49,7 @@ if [ "$DEVICESERIAL" == "" ]; then
   log "Failed to get device serial number"
   exit 2
 fi
-echo $DEVICESERIAL | tee -a $LOGFILE
-log "Got device serial number"
+log "Got device serial number: $DEVICESERIAL"
 
 # Set final backup file name
 COMPRESSEDBACKUP=$BACKUPDIR/$DEVICENAME-$DEVICESERIAL.tgz
@@ -66,12 +64,18 @@ log "Finished determining free space on current machine"
 
 # Check if we have enough disk space in $BACKUPDIR for the backup (roughly 2x size)
 # if DESKTOPSPACE > DEVICESPACE*2 then okay!
+DOUBLEDEVICESPACE=$(expr $DEVICESPACE \* 2)
 log "Approximate disk space used on device: $DEVICESPACE"
 log "Approximate free space on backup disk: $DESKTOPSPACE"
-DOUBLEDEVICESPACE=$(expr $DEVICESPACE \* 2)
+log "Approximate freespace need for backup: $DOUBLEDEVICESPACE"
+
+# Rudimentary check for 2x space used on device on desktop
+if [ "$DOUBLEDEVICESPACE" -gt "$DESKTOPSPACE" ]; then
+  log "Insufficient free space on backup device: $DESKTOPSPACE smaller than $DOUBLEDEVICESPACE"
+  exit 3
+fi
 
 # Get list of applications installed on device
-
 log "Get list of installed apps from device"
 ssh $DEVICEUSER@$HOST 'click list' | tee -a $CLICKFILE
 log "Finished getting list of installed apps from device"
@@ -84,7 +88,7 @@ if [ "$?" == "0" ]; then
   log "Finished copying files from device"
 else
   log "Copying files from device FAILED"
-  exit 3
+  exit 4
 fi
 
 # Compress backup
@@ -98,9 +102,9 @@ if [ "$?" == "0" ]; then
     log "Finished deleting uncompressed backup files from $BACKUPDIR/$DEVICEUSER"
   else
     log "Problem deleting uncompressed backup files from $BACKUPDIR/$DEVICEUSER"
-    exit 4
+    exit 5
   fi
 else
   log "Compressing files FAILED"
-  exit 5
+  exit 6
 fi
