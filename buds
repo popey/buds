@@ -1,0 +1,85 @@
+#!/bin/bash
+# Backup Ubuntu Device Script
+#
+# Goal: backup all user data and a list of apps
+# todo: Restore script ;)
+#
+# Assumptions:
+#  * Device has ssh enabled
+#  * This machine has an ssh key which is on the device
+
+if [ "$#" -ne 1 ]; then
+    echo "Specify hostname or IP address of device"
+    echo "e.g. 'buds 192.168.1.20'"
+    exit 1
+fi
+
+DATESTART=$(date +%Y%m%d-%H%M%S)
+LOGDIR="$HOME/buds/logs/$DATESTART"
+BACKUPDIR="$HOME/buds/backup/$DATESTART"
+LOGFILE=$LOGDIR/backup.log
+CLICKFILE="$BACKUPDIR/clicks"
+DEVICEUSER="phablet"
+COMPRESSEDBACKUP=$BACKUPDIR/$DATESTART.tgz
+HOST="$1"
+mkdir -p $LOGDIR
+mkdir -p $BACKUPDIR
+
+log() {
+        echo $(date +%Y%m%d-%H%M%S) : $* | tee -a $LOGFILE
+}
+
+# TODO HERE
+# Check we have the tools we need to run the backup (rsync / tee)
+# check host is up
+# check host is actually an ubuntu device
+# Count how many files and how much data will be backed up
+
+log "Determine disk space used on device"
+DEVICESPACE=$(ssh $DEVICEUSER@$HOST "du -bs /home/phablet/" | awk '{ print $1}')
+log "Finished determining disk space used on device"
+
+log "Determine free space on current machine"
+DESKTOPSPACE=$(df --output=avail  $BACKUPDIR | tail -n 1)
+log "Finished determining free space on current machine"
+
+# Check if we have enough disk space in $BACKUPDIR for the backup (roughly 2x size)
+# if DESKTOPSPACE > DEVICESPACE*2 then okay!
+log "Approximate disk space used on device: $DEVICESPACE"
+log "Approximate free space on backup disk: $DESKTOPSPACE"
+DOUBLEDEVICESPACE=$(expr $DEVICESPACE \* 2)
+
+# Get list of applications installed on device
+
+log "Get list of installed apps from device"
+ssh $DEVICEUSER@$HOST 'click list' | tee -a $CLICKFILE
+log "Finished getting list of installed apps from device"
+
+# Start backup
+
+log "Copying files from device"
+rsync -az --info=progress2 -e ssh $DEVICEUSER@$HOST:/home/$DEVICEUSER $BACKUPDIR | tee -a $LOGFILE
+if [ "$?" == "0" ]; then
+  log "Finished copying files from device"
+else
+  log "Copying files from device FAILED"
+  exit 2
+fi
+
+# Compress backup
+log "Compressing backup"
+tar czf $COMPRESSEDBACKUP $BACKUPDIR/$DEVICEUSER
+if [ "$?" == "0" ]; then
+  log "Finished compressing backup to $COMPRESSEDBACKUP"
+  log "Deleting uncompressed backup files from $BACKUPDIR/$DEVICEUSER"
+  rm -rf $BACKUPDIR/$DEVICEUSER
+  if [ "$?" == "0" ]; then
+    log "Finished deleting uncompressed backup files from $BACKUPDIR/$DEVICEUSER"
+  else
+    log "Problem deleting uncompressed backup files from $BACKUPDIR/$DEVICEUSER"
+    exit 3
+  fi
+else
+  log "Copying files from device FAILED"
+  exit 2
+fi
