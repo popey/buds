@@ -11,6 +11,11 @@ Backup Ubuntu based devices over ssh to a local directory.
  * Captures a list of installed clicks, for re-installation during device restoration
  * Uses device name and serial number in backup name, useful if you have multiple devices being backed up
 
+## Pre-requisites
+
+ * rsync & tee installed on host
+ * ssh key installed on device ( I use phablet-shell to set this up)
+
 ## Running
 
 `buds (ip address of device)`
@@ -20,8 +25,6 @@ e.g.
 `buds 192.168.1.20`
 
 Backs up everything in `/home/phablet`, and creates a list of all click packages installed.
-
-Assumes ssh is enabled on the phone, and there is an ssh key on the phone for the machine running the backup.
 
 ## TODO:
 
