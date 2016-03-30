@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 # Backup Ubuntu Device Script
 #
 # Goal: backup all user data and a list of apps
@@ -36,7 +36,7 @@ log() {
 # Get device code name
 log "Get device code name"
 DEVICENAME=$(ssh $DEVICEUSER@$HOST getprop ro.product.name)
-if [ "$DEVICENAME" == "" ]; then
+if [ "$DEVICENAME" = "" ]; then
   log "Failed to get device code name"
   exit 1
 fi
@@ -45,7 +45,7 @@ log "Got device code name: $DEVICENAME"
 # Get device serial number
 log "Get device serial number"
 DEVICESERIAL=$(ssh $DEVICEUSER@$HOST getprop ro.serialno)
-if [ "$DEVICESERIAL" == "" ]; then
+if [ "$DEVICESERIAL" = "" ]; then
   log "Failed to get device serial number"
   exit 2
 fi
@@ -84,7 +84,7 @@ log "Finished getting list of installed apps from device"
 
 log "Copying files from device"
 rsync -az --info=progress2 -e ssh $DEVICEUSER@$HOST:/home/$DEVICEUSER $BACKUPDIR | tee -a $LOGFILE
-if [ "$?" == "0" ]; then
+if [ "$?" = "0" ]; then
   log "Finished copying files from device"
 else
   log "Copying files from device FAILED"
@@ -94,11 +94,11 @@ fi
 # Compress backup
 log "Compressing backup"
 tar czf $COMPRESSEDBACKUP $BACKUPDIR/$DEVICEUSER
-if [ "$?" == "0" ]; then
+if [ "$?" = "0" ]; then
   log "Finished compressing backup to $COMPRESSEDBACKUP"
   log "Deleting uncompressed backup files from $BACKUPDIR/$DEVICEUSER"
   rm -rf $BACKUPDIR/$DEVICEUSER
-  if [ "$?" == "0" ]; then
+  if [ "$?" = "0" ]; then
     log "Finished deleting uncompressed backup files from $BACKUPDIR/$DEVICEUSER"
   else
     log "Problem deleting uncompressed backup files from $BACKUPDIR/$DEVICEUSER"
