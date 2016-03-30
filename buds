@@ -15,14 +15,11 @@ if [ "$#" -ne 1 ]; then
 fi
 
 DATESTART=$(date +%Y%m%d-%H%M%S)
-LOGDIR="$HOME/buds/logs/$DATESTART"
 BACKUPDIR="$HOME/buds/backup/$DATESTART"
-LOGFILE=$LOGDIR/backup.log
-CLICKFILE="$BACKUPDIR/clicks"
+LOGFILE=$BACKUPDIR/backup.log
+CLICKFILE="$BACKUPDIR/clicks.list"
 DEVICEUSER="phablet"
-COMPRESSEDBACKUP=$BACKUPDIR/$DATESTART.tgz
 HOST="$1"
-mkdir -p $LOGDIR
 mkdir -p $BACKUPDIR
 
 log() {
@@ -34,13 +31,37 @@ log() {
 # check host is up
 # check host is actually an ubuntu device
 # Count how many files and how much data will be backed up
+# Lots of checking for each of these steps to handle failures
+
+# Get device code name
+log "Get device code name"
+DEVICENAME=$(ssh $DEVICEUSER@$HOST getprop ro.product.name)
+if [ "$DEVICENAME" == "" ]; then
+  log "Failed to get device code name"
+  exit 1
+fi
+echo $DEVICENAME | tee -a $LOGFILE
+log "Got device code name"
+
+# Get device serial number
+log "Get device serial number"
+DEVICESERIAL=$(ssh $DEVICEUSER@$HOST getprop ro.serialno)
+if [ "$DEVICESERIAL" == "" ]; then
+  log "Failed to get device serial number"
+  exit 2
+fi
+echo $DEVICESERIAL | tee -a $LOGFILE
+log "Got device serial number"
+
+# Set final backup file name
+COMPRESSEDBACKUP=$BACKUPDIR/$DEVICENAME-$DEVICESERIAL.tgz
 
 log "Determine disk space used on device"
 DEVICESPACE=$(ssh $DEVICEUSER@$HOST "du -bs /home/phablet/" | awk '{ print $1}')
 log "Finished determining disk space used on device"
 
 log "Determine free space on current machine"
-DESKTOPSPACE=$(df --output=avail  $BACKUPDIR | tail -n 1)
+DESKTOPSPACE=$(df -B1 --output=avail  $BACKUPDIR | tail -n 1)
 log "Finished determining free space on current machine"
 
 # Check if we have enough disk space in $BACKUPDIR for the backup (roughly 2x size)
@@ -63,7 +84,7 @@ if [ "$?" == "0" ]; then
   log "Finished copying files from device"
 else
   log "Copying files from device FAILED"
-  exit 2
+  exit 3
 fi
 
 # Compress backup
@@ -77,9 +98,9 @@ if [ "$?" == "0" ]; then
     log "Finished deleting uncompressed backup files from $BACKUPDIR/$DEVICEUSER"
   else
     log "Problem deleting uncompressed backup files from $BACKUPDIR/$DEVICEUSER"
-    exit 3
+    exit 4
   fi
 else
-  log "Copying files from device FAILED"
-  exit 2
+  log "Compressing files FAILED"
+  exit 5
 fi
