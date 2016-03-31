@@ -8,9 +8,9 @@
 #  * Device has ssh enabled
 #  * This machine has an ssh key which is on the device
 
-if [ "$#" -ne 1 ]; then
-    echo "Specify hostname or IP address of device"
-    echo "e.g. 'buds 192.168.1.20'"
+if [ "$#" -ne 2 ]; then
+    echo "Specify hostname or IP address of device, and password/passphrase"
+    echo "e.g. 'buds 192.168.1.20 1234'"
     exit 1
 fi
 
@@ -20,6 +20,7 @@ LOGFILE=$BACKUPDIR/backup.log
 CLICKFILE="$BACKUPDIR/clicks.list"
 DEVICEUSER="phablet"
 HOST="$1"
+PASSPHRASE="$2"
 mkdir -p $BACKUPDIR
 
 log() {
@@ -30,7 +31,6 @@ log() {
 # Check we have the tools we need to run the backup (rsync / tee)
 # check host is up
 # check host is actually an ubuntu device
-# Count how many files and how much data will be backed up
 # Lots of checking for each of these steps to handle failures
 
 # Get device code name
@@ -55,23 +55,20 @@ log "Got device serial number: $DEVICESERIAL"
 COMPRESSEDBACKUP=$BACKUPDIR/$DEVICENAME-$DEVICESERIAL.tgz
 
 log "Determine disk space used on device"
-DEVICESPACE=$(ssh $DEVICEUSER@$HOST "du -bks /home/phablet/" | awk '{ print $1}')
+DEVICESPACE=$(ssh $DEVICEUSER@$HOST "echo $PASSPHRASE | sudo -S --prompt='' du -bks /home/phablet/" | awk '{ print $1}')
 log "Finished determining disk space used on device"
 
 log "Determine free space on current machine"
 DESKTOPSPACE=$(df -k $BACKUPDIR | tail -n 1 | awk '{ print $4 }' )
 log "Finished determining free space on current machine"
 
-# Check if we have enough disk space in $BACKUPDIR for the backup (roughly 2x size)
-# if DESKTOPSPACE > DEVICESPACE*2 then okay!
-DOUBLEDEVICESPACE=$(expr $DEVICESPACE \* 2)
+# Check if we have enough disk space in $BACKUPDIR for the backup (roughly same size)
 log "Approximate disk space used on device (K): $DEVICESPACE"
 log "Approximate free space on backup disk (K): $DESKTOPSPACE"
-log "Approximate freespace need for backup (K): $DOUBLEDEVICESPACE"
 
-# Rudimentary check for 2x space used on device on desktop
-if [ "$DOUBLEDEVICESPACE" -gt "$DESKTOPSPACE" ]; then
-  log "Insufficient free space on backup device: $DESKTOPSPACE smaller than $DOUBLEDEVICESPACE"
+# Rudimentary check for same space used on device on desktop
+if [ "$DEVICESPACE" -gt "$DESKTOPSPACE" ]; then
+  log "Insufficient free space on backup device: $DESKTOPSPACE smaller than $DEVICESPACE"
   exit 3
 fi
 
@@ -81,30 +78,12 @@ ssh $DEVICEUSER@$HOST 'click list' > $CLICKFILE
 log "Finished getting list of installed apps from device"
 
 # Start backup
-
 log "Copying files from device"
-rsync -az --info=progress2 -e ssh $DEVICEUSER@$HOST:/home/$DEVICEUSER $BACKUPDIR | tee -a $LOGFILE
+ssh $DEVICEUSER@$HOST "echo $PASSPHRASE | sudo -S --prompt='' tar czf - ." > $COMPRESSEDBACKUP
+
 if [ "$?" = "0" ]; then
-  log "Finished copying files from device"
+  log "Finished copying files from device to $COMPRESSEDBACKUP"
 else
   log "Copying files from device FAILED"
   exit 4
-fi
-
-# Compress backup
-log "Compressing backup"
-tar czf $COMPRESSEDBACKUP $BACKUPDIR/$DEVICEUSER
-if [ "$?" = "0" ]; then
-  log "Finished compressing backup to $COMPRESSEDBACKUP"
-  log "Deleting uncompressed backup files from $BACKUPDIR/$DEVICEUSER"
-  rm -rf $BACKUPDIR/$DEVICEUSER
-  if [ "$?" = "0" ]; then
-    log "Finished deleting uncompressed backup files from $BACKUPDIR/$DEVICEUSER"
-  else
-    log "Problem deleting uncompressed backup files from $BACKUPDIR/$DEVICEUSER"
-    exit 5
-  fi
-else
-  log "Compressing files FAILED"
-  exit 6
 fi

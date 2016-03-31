@@ -10,6 +10,7 @@ Backup Ubuntu based devices over ssh to a local directory.
  * Compresses backup
  * Captures a list of installed clicks, for re-installation during device restoration
  * Uses device name and serial number in backup name, useful if you have multiple devices being backed up
+ * Uses sudo to ensure all files in /home/phablet are backed up, no matter who owns them
 
 ## Pre-requisites
 
@@ -18,11 +19,11 @@ Backup Ubuntu based devices over ssh to a local directory.
 
 ## Running
 
-`buds (ip address of device)`
+`buds (ip address of device) (passphrase)`
 
 e.g.
 
-`buds 192.168.1.20`
+`buds 192.168.1.20 1234`
 
 Backs up everything in `/home/phablet`, and creates a list of all click packages installed.
 
