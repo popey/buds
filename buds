@@ -21,7 +21,13 @@ CLICKFILE="$BACKUPDIR/clicks.list"
 DEVICEUSER="phablet"
 HOST="$1"
 PASSPHRASE="$2"
+
+# Create directory for backup and log
 mkdir -p $BACKUPDIR
+if [ "$?" -ne "0" ]; then
+  echo "Failed to create $BACKUPDIR"
+  exit 5
+fi
 
 log() {
         echo $(date +%Y%m%d-%H%M%S) : $* | tee -a $LOGFILE
