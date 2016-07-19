@@ -21,6 +21,10 @@ CLICKFILE="$BACKUPDIR/clicks.list"
 DEVICEUSER="phablet"
 HOST="$1"
 PASSPHRASE="$2"
+# Tar extra parameters
+# gstreamer: causes video playback issues if restoring the backup
+#            on different hardware
+TAREXTRAPARAMS="--exclude=.cache/gstreamer-1.0/*"
 
 # Create directory for backup and log
 mkdir -p $BACKUPDIR
@@ -85,7 +89,7 @@ log "Finished getting list of installed apps from device"
 
 # Start backup
 log "Copying files from device"
-ssh $DEVICEUSER@$HOST "echo $PASSPHRASE | sudo -S --prompt='' tar czf - ." > $COMPRESSEDBACKUP
+ssh $DEVICEUSER@$HOST "echo $PASSPHRASE | sudo -S --prompt='' tar -c -z $TAREXTRAPARAMS -f - ." > $COMPRESSEDBACKUP
 
 if [ "$?" = "0" ]; then
   log "Finished copying files from device to $COMPRESSEDBACKUP"
