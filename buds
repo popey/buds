@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/sh 
 # Backup Ubuntu Device Script
 #
 # Goal: backup all user data and a list of apps
@@ -9,9 +9,9 @@
 #  * This machine has an ssh key which is on the device
 
 if [ "$#" -ne 2 ]; then
-    echo "Specify hostname or IP address of device, and password/passphrase"
-    echo "e.g. 'buds 192.168.1.20 1234'"
-    exit 1
+  echo "Specify hostname or IP address of device, and password/passphrase"
+  echo "e.g. 'buds 192.168.1.20 1234'"
+  exit 1
 fi
 
 DATESTART=$(date +%Y%m%d-%H%M%S)
@@ -37,8 +37,29 @@ log() {
         echo $(date +%Y%m%d-%H%M%S) : $* | tee -a $LOGFILE
 }
 
+
+
+# Check we have the tools we need to run the backup (rsync)
+
+cmdtest() {
+  # cmdtest reports wether the commands given
+  # as parameters are available on the current system
+  # and exits with exit code 1 if not
+  # (can handle unlimited parameters, but exits on first fail)
+  log "Checking necessary tools"
+  for cmd in $*; do
+    log "Looking for '$1' command"
+    if ! type $1 >/dev/null ; then
+      log "This tool needs '$1' to run properly. Consider installing it."
+      exit 1
+    fi
+    log "Found $1."
+  done
+}
+
+cmdtest rsync
+
 # TODO HERE
-# Check we have the tools we need to run the backup (rsync / tee)
 # check host is up
 # check host is actually an ubuntu device
 # Lots of checking for each of these steps to handle failures
