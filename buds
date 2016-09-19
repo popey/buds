@@ -34,7 +34,7 @@ if [ "$?" -ne "0" ]; then
 fi
 
 log() {
-        echo $(date +%Y%m%d-%H%M%S) : $* | tee -a $LOGFILE
+  echo $(date +%Y%m%d-%H%M%S) : $* | tee -a $LOGFILE
 }
 
 # Check we have the tools we need to run the backup (rsync)
