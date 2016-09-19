@@ -46,12 +46,12 @@ cmdtest() {
   # (can handle unlimited parameters, but exits on first fail)
   log "Checking necessary tools"
   for cmd in $*; do
-    log "Looking for '$1' command"
-    if ! type $1 >/dev/null ; then
-      log "This tool needs '$1' to run properly. Consider installing it."
+    log "Looking for '$cmd' command"
+    if ! type $cmd >/dev/null ; then
+      log "This tool needs '$cmd' to run properly. Consider installing it."
       exit 1
     fi
-    log "Found $1."
+    log "Found $cmd."
   done
 }
 
