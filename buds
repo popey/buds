@@ -37,8 +37,6 @@ log() {
         echo $(date +%Y%m%d-%H%M%S) : $* | tee -a $LOGFILE
 }
 
-
-
 # Check we have the tools we need to run the backup (rsync)
 
 cmdtest() {
