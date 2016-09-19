@@ -1,4 +1,4 @@
-#!/bin/sh 
+#!/bin/sh
 # Backup Ubuntu Device Script
 #
 # Goal: backup all user data and a list of apps
