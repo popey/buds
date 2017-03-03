@@ -14,13 +14,27 @@ if [ "$#" -ne 2 ]; then
     exit 1
 fi
 
-DATESTART=$(date +%Y%m%d-%H%M%S)
-BACKUPDIR="$HOME/buds/backup/$DATESTART"
-LOGFILE=$BACKUPDIR/backup.log
-CLICKFILE="$BACKUPDIR/clicks.list"
-DEVICEUSER="phablet"
+#set -vexu
+
 HOST="$1"
 PASSPHRASE="$2"
+
+DATESTART=$(date +%Y%m%d-%H%M%S)
+
+#
+# While a bit harder to read, using the "A=${A:-DEFAULT}" syntax lets any one
+# of these configuration points be overriden by an environment variable from
+# the command line without having to modify the script:
+#
+# e.g. BACKUPSUPER=/some/other/dir /opt/buds $IP $PIN
+#
+BACKUPNAME=${BACKUPNAME:-$DATESTART}
+BACKUPSUPER="${BACKUPSUPER:-$HOME/buds/backup}"
+BACKUPDIR="${BACKUPDIR:-$BACKUPSUPER/$BACKUPNAME}"
+LOGFILE="${LOGFILE:-$BACKUPDIR/backup.log}"
+CLICKFILE="${CLICKFILE:-$BACKUPDIR/clicks.list}"
+DEVICEUSER="${DEVICEUSER:-phablet}"
+
 # Tar extra parameters
 # gstreamer: causes video playback issues if restoring the backup
 #            on different hardware
